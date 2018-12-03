@@ -1,0 +1,37 @@
+In file included from /home/scratchmex/Google Drive/Ricardo Iván González Franco/Proyecto/main.c:4:0:
+/home/scratchmex/Google Drive/Ricardo Iván González Franco/Proyecto/matrixlib.h: In function ‘printMatrix’:
+/home/scratchmex/Google Drive/Ricardo Iván González Franco/Proyecto/matrixlib.h:56:28: warning: format ‘%lf’ expects argument of type ‘double’, but argument 2 has type ‘int’ [-Wformat=]
+             printf("%+06.2lf ", mat.ptr[m][n]);
+                     ~~~~~~~^    ~~~~~~~~~~~~~
+                     %+06.2d
+/home/scratchmex/Google Drive/Ricardo Iván González Franco/Proyecto/matrixlib.h:59:6: error: invalid preprocessing directive #elifMATTYPE
+     #elifMATTYPE == char
+      ^~~~~~~~~~~
+/home/scratchmex/Google Drive/Ricardo Iván González Franco/Proyecto/matrixlib.h: In function ‘fprintMatrix’:
+/home/scratchmex/Google Drive/Ricardo Iván González Franco/Proyecto/matrixlib.h:71:55: warning: format ‘%lf’ expects argument of type ‘double’, but argument 3 has type ‘int’ [-Wformat=]
+         for(int n=0; n<mat.nCols; n++) fprintf(fp, "%lf ", mat.ptr[m][n]);
+                                                     ~~^    ~~~~~~~~~~~~~
+                                                     %d
+/home/scratchmex/Google Drive/Ricardo Iván González Franco/Proyecto/matrixlib.h: In function ‘fscanMatrix’:
+/home/scratchmex/Google Drive/Ricardo Iván González Franco/Proyecto/matrixlib.h:88:23: warning: format ‘%lf’ expects argument of type ‘double *’, but argument 3 has type ‘char *’ [-Wformat=]
+         fscanf(fp, "%lf", &mat.ptr[m][n]);
+                     ~~^   ~~~~~~~~~~~~~~
+                     %hhd
+/home/scratchmex/Google Drive/Ricardo Iván González Franco/Proyecto/main.c: In function ‘fscanMatrixAdvanced’:
+/home/scratchmex/Google Drive/Ricardo Iván González Franco/Proyecto/main.c:29:5: warning: implicit declaration of function ‘strcat’ [-Wimplicit-function-declaration]
+     strcat(param, prefix);
+     ^~~~~~
+/home/scratchmex/Google Drive/Ricardo Iván González Franco/Proyecto/main.c:29:5: warning: incompatible implicit declaration of built-in function ‘strcat’
+/home/scratchmex/Google Drive/Ricardo Iván González Franco/Proyecto/main.c:29:5: note: include ‘<string.h>’ or provide a declaration of ‘strcat’
+/home/scratchmex/Google Drive/Ricardo Iván González Franco/Proyecto/main.c:36:23: warning: format ‘%lf’ expects argument of type ‘double *’, but argument 3 has type ‘char *’ [-Wformat=]
+         fscanf(fp, "%lf", &mat.ptr[m][n]);
+                     ~~^   ~~~~~~~~~~~~~~
+                     %hhd
+/home/scratchmex/Google Drive/Ricardo Iván González Franco/Proyecto/main.c: In function ‘main’:
+/home/scratchmex/Google Drive/Ricardo Iván González Franco/Proyecto/main.c:69:14: error: too few arguments to function ‘fopen’
+     FILE* fp=fopen("bros.txt");
+              ^~~~~
+In file included from /home/scratchmex/Google Drive/Ricardo Iván González Franco/Proyecto/main.c:3:0:
+/usr/include/stdio.h:232:14: note: declared here
+ extern FILE *fopen (const char *__restrict __filename,
+              ^~~~~
