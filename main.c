@@ -1,16 +1,5 @@
 #define MATTYPE char
 
-#include <stdio.h>
-#include "matrixlib.h"
-#include <ncurses.h> //terminal manipulation lib
-#include <string.h>
-
-#include <math.h>
-#include <stdlib.h>
-#include <time.h>
-
-#include "settings.h"
-
 #ifdef __unix__
 #define OS_Unix
 
@@ -19,6 +8,22 @@
 #include <windows.h>
 #endif
 
+#include "settings.h"
+#include "matrixlib.h"
+#include "gui.h"
+#include "game.h"
+
+#include <stdio.h>
+#include <ncurses.h> //terminal manipulation lib
+#include <string.h>
+
+#include <math.h>
+#include <stdlib.h>
+#include <time.h>
+
+void break_here(){
+}
+
 /** load text
 FILE* fp=fopen("menu.txt", "r");
 Matrix bros=fscanMatrixAdvanced(fp, "title");
@@ -26,44 +31,6 @@ printMatrix(bros);
 fclose(fp);
 //freeMatrix(bros);
 **/
-
-void resizeWindow(int width, int height){
-    #ifdef OS_Windows
-    SMALL_RECT windowSize = {0, 0, width, height} //change the values
-    SetConsoleWindowInfo(GetStdHandle(STD_OUTPUT_HANDLE), TRUE, &windowSize);
-    #endif
-
-    #ifdef OS_Unix
-    printf("\e[8;%d;%dt", width, height);
-    #endif
-}
-
-void wprintMatrix(WINDOW* win, Matrix mat){
-    int y, x;
-    getmaxyx(win, y, x);
-    if(mat.nCols!=x || mat.nRens!=y) printf("CUIDADO CON TUS DIMENSIONES DE LA MATRIZ\n");
-    for(int m=0; m<mat.nRens; m++) for(int n=0; n<mat.nCols; n++){
-        if(mat.ptr[m][n]=='+') continue; //si es el char especial saltalo
-        mvprintw(m, n, "%c", mat.ptr[m][n]);
-    }
-}
-
-void wprintMatrixRange(WINDOW* win, Matrix mat, int y0, int x0){
-    int y, x;
-    getmaxyx(win, y, x);
-    if(mat.nCols!=x || mat.nRens!=y) printf("CUIDADO CON TUS DIMENSIONES DE LA MATRIZ\n");
-    for(int m=0; m<mat.nRens && m<=y0; m++) for(int n=0; n<mat.nCols && n<=x0; n++){
-        if(mat.ptr[m][n]=='+') continue; //si es el char especial saltalo
-        mvprintw(m, n, "%c", mat.ptr[m][n]);
-    }
-}
-
-void shiftColsMatrix(Matrix mat, int dir){
-    for(int n=(mat.nCols-dir)%(mat.nCols); n<mat.nCols; n++)
-        for(int m=0; m<mat.nRens; m++){
-            mat.ptr[m][(n+dir)%(mat.nCols)]=mat.ptr[m][n];
-    }
-}
 
 void sleep_ms(int milliseconds){ // cross-platform sleep function
     #if defined(_WIN32) || defined(WIN32)
@@ -79,48 +46,103 @@ void sleep_ms(int milliseconds){ // cross-platform sleep function
 }
 
 //++++++ GAME ++++++
-void genChunk(Matrix chunk){
-    //fresh chunk
-    initMatrix(chunk, '+');
-    //generate
-    int height=(rand()%(WIN_height-OBS_heightspace))+OBS_heightspace;
-    int length=OBS_maxlength-(rand()%OBS_lengthvar); //largo del obstaculo
-    for(int x=0; x<length && x<chunk.nCols; x++)
-        chunk.ptr[height][x]='=';
+void printPlayer(struct Player player){
+    mvprintw(player.y, player.x, "%%");
 }
 
-void StartGame(Matrix chunk){
+int canDrop(Matrix world, struct Player *player){
+    if(player->y+1>=world.nRens) return 0;
+    for(int n=0; n<player->x_border && n<world.nCols; n++){
+        mvprintw(player->y+1, player->x+n, "@");
+        if(world.ptr[player->y+1][player->x+n]!='+') return 0;
+    }
+    return 1;
+}
+
+int canJump(Matrix world, struct Player *player){
+    if(player->y-1>=world.nRens || player->y-1<0) return 0;
+    for(int n=0; n<player->x_border && n<world.nCols; n++){
+        mvprintw(player->y-1, player->x+n, "@");
+        if(world.ptr[player->y-1][player->x+n]!='+') return 0;
+    }
+    return 1;
+}
+
+int movePlayer(WINDOW *win, struct Player *player, Matrix world){
+    nodelay(win, TRUE);
+    char c = getch();
+    nodelay(win, FALSE);
+    
+    switch(c) {
+        case ' ':
+            if(player->jumpx==0) player->jumpx=1;
+            //player->jumpx++;
+            mvprintw(4, 1, ":UP");
+            break;
+        case 's':
+            pauseMenu(win);
+            break;
+        default:
+            mvprintw(4, 1, ":");
+            break;
+    }
+    
+    if(player->jumpx!=0){//si esta brincando opera
+        int jumpy=jumpPoly(player->jumpx);
+        player->jumpx++;
+        mvprintw(6, 1, ":BRINCANDO");
+        if(jumpy==0) //si ya acabo de brincar reinicializa
+            player->jumpx=0;
+        else if(jumpy>0 && canJump(world, player)){
+            mvprintw(7, 1, ":SUBIENDOO");    
+            player->y-=jumpy; //subiendo
+        }
+    }
+    else if(canDrop(world, player) && player->y+2!=world.nRens){
+        mvprintw(7, 1, ":CAYENDOO");
+        player->y++; 
+    }
+        
+    mvprintw(3, 1, "yxj[%d,%d,%d]", player->y, player->x, player->jumpx);
+    
+    //verificacion que perdio
+    //player.x+1<world.nCols siempreeee
+    for(int m=0; m<player->y_border && player->y-m<world.nRens; m++)
+        if(world.ptr[player->y-m][player->x+1]=='='){
+            break_here();
+            return 1;
+        }
+    return 0;
+}
+
+void StartGame(Matrix world, Matrix chunk, struct Player player){
     int chunk_offset=0, chunk_col;
     double factor;
-    clear();
-    printw("Starting...");
-    refresh();
     
-    Matrix world=createMatrix(WIN_height, WIN_width);
-    initMatrix(world, '+');
-    
-    sleep_ms(1000);
-    
-    int running=1;
-    while(running){
+    while(1){
+        clear();
         //++ start verifications ++
         if(chunk_offset%GAME_chunksize==0) genChunk(chunk);        
         
         //++ start drawing ++
         //print world
-        clear();
         mvprintw(1, 1, "[%d]", chunk_offset);
         wprintMatrix(stdscr, world); //print world matrix
         box(stdscr, '|', '-'); //print borders
-        //print player
-        mvprintw(WIN_height-2, (int)floor(WIN_width/2), "%%");
+        //move player
+        if(movePlayer(stdscr, &player, world)){
+            mvprintw(10, 1, "[PERDIO]");
+            printPlayer(player); //perdio si return 1
+            break;
+        } 
         
-        refresh();
+        printPlayer(player);
         
         //++ new tick ++
         factor=1/(log2(floor(chunk_offset/GAME_chunksize)+2));
         mvprintw(2, 1, "[f:%lf]", factor);
         refresh();
+        
         sleep_ms((int)floor(GAME_mstick*factor));
         shiftColsMatrix(world, -1); //move world left 1
         //copy new column to world
@@ -130,49 +152,45 @@ void StartGame(Matrix chunk){
         chunk_offset++;
     }
     
-    getchar();
-    freeMatrix(world);
-}
-
-int Menu(){
-    char ch;
-    //mas funcionalidad, seleccion con colores
-    
-    // start_color();
-    // init_pair(1, COLOR_BLACK, COLOR_RED);
-    // init_pair(2, COLOR_BLACK, COLOR_GREEN);
-    // attron(A_BOLD);
-    // attron(COLOR_PAIR(0));
-    // printw("%c\n", ch);
-    // attroff(A_BOLD);
-    // attroff(COLOR_PAIR(0));
-    // if(ch=='q') break;
-    printw("Presiona <espacio> para iniciar el juego");
+    mvprintw(5, 1, ":GAME OVER\nPresiona enter para salir");
     refresh();
-    while(1){
-        ch = getch(); //wait
-        switch(ch){
-            case ' ':
-                return 1;
-        }
-	}
+    getchar();
 }
 
 void initGame(){
+    resizeterm(WIN_height, WIN_width);
+    clear();
+    printw("Starting...");
+    refresh();
+    
     //start chunk
     Matrix chunk=createMatrix(WIN_height, GAME_chunksize);
     
+    //start world
+    Matrix world=createMatrix(WIN_height, WIN_width);
+    initMatrix(world, '+');
+    
     //GAME_mstick in settings.h
     
-    if(Menu()==1) StartGame(chunk);
+    //init player
+    struct Player player={
+        .x=(int)floor(WIN_width/2),
+        .y=WIN_height-2,
+        .x_border=1,
+        .y_border=1,
+        .jumpx=0
+    };
+    
+    sleep_ms(1000);
+    if(Menu()==1) StartGame(world, chunk, player);
     else{
         endwin();
         printf("SOMETHING HAPPENED IN MENU\n");
     }
     
     endwin();
-    printMatrix(chunk);
     printf("GAME ENDED");
+    freeMatrix(world);
     freeMatrix(chunk);
 }
 
@@ -182,7 +200,6 @@ int main(){
     noecho(); // Don't echo any keypresses
     curs_set(FALSE); // Don't display a cursor
     //raw(); // Interpret raw text input
-    
     
     initGame();
 

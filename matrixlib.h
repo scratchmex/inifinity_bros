@@ -140,3 +140,10 @@ Matrix fscanMatrixAdvanced(FILE* fp, char prefix[]){
 
     return mat;
 }
+
+void shiftColsMatrix(Matrix mat, int dir){
+    for(int n=(mat.nCols-dir)%(mat.nCols); n<mat.nCols; n++)
+        for(int m=0; m<mat.nRens; m++){
+            mat.ptr[m][(n+dir)%(mat.nCols)]=mat.ptr[m][n];
+    }
+}
