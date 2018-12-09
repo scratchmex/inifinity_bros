@@ -70,7 +70,7 @@ int canJump(Matrix world, struct Player *player){
     return 1;
 }
 
-int movePlayer(WINDOW *win, struct Player *player, Matrix world){
+void movePlayer(WINDOW *win, struct Player *player, Matrix world){
     nodelay(win, TRUE);
     char c = getch();
     nodelay(win, FALSE);
@@ -94,7 +94,7 @@ int movePlayer(WINDOW *win, struct Player *player, Matrix world){
         int jumpy=jumpPoly(player->jumpx);
         player->jumpx++;
         mvprintw(6, 1, ":BRINCANDO");
-        if(jumpy==0 || !canJump(world, player)) //si ya acabo de brincar reinicializa
+        if(jumpy==-2 || !canJump(world, player)) //si ya acabo de brincar reinicializa
             player->jumpx=0;
         else if(jumpy>0){
             mvprintw(7, 1, ":SUBIENDOO");    
@@ -109,48 +109,59 @@ int movePlayer(WINDOW *win, struct Player *player, Matrix world){
         mvprintw(7, 1, ":CAYENDOO");
         player->y++; 
     }
-        
-    mvprintw(3, 1, "yxj[%d,%d,%d]", player->y, player->x, player->jumpx);
-    
-    //verificacion que perdio
-    //player.x+1<world.nCols siempreeee
-    for(int m=0; m<player->y_border && player->y-m<world.nRens; m++)
-        if(world.ptr[player->y-m][player->x+player->x_border]=='='){
-            break_here();
-            return 1;
-        }
-    return 0;
 }
 
-void StartGame(Matrix world, Matrix chunk, struct Player player){
+void StartGame(Matrix world, Matrix chunk, struct Player *player){
     int chunk_offset=0, chunk_col;
-    double factor;
+    double factor=1;
     
     while(1){
-        clear();
-        //++ start verifications ++
-        if(chunk_offset%GAME_chunksize==0) genChunk(chunk);        
-        
+        clear();   
         //++ start drawing ++
         //print world
         mvprintw(1, 1, "[%d]", chunk_offset);
         wprintMatrix(stdscr, world); //print world matrix
         box(stdscr, '|', '-'); //print borders
-        //move player
-        if(movePlayer(stdscr, &player, world)){
-            mvprintw(10, 1, ":PERDIO");
-            printPlayer(player); //perdio si return 1
-            break;
-        } 
+        //move player and print
+        mvprintw(3, 1, "yxjli[%d,%d, %d, %d, %d]", player->y, player->x, player->jumpx, player->lifes, player->invulerable);
+        movePlayer(stdscr, player, world);
         
-        printPlayer(player);
-        
-        //++ new tick ++
-        factor=1/(log2(floor(chunk_offset/GAME_chunksize)+2));
+        if(player->invulerable!=-1){ //es invulnerable
+            mvprintw(5, 1, ":INVULNERABLE");
+            if(chunk_offset==PLAYER_invulnerableticks+player->invulerable)
+                player->invulerable=-1; //resetea la invulnerabilidad
+            else if((chunk_offset-player->invulerable)%2==1){ //decide si lo imprimes para que parpadee
+                printPlayer(*player);
+            }
+        }
+        else //si no es invulnerable imprimelo
+            printPlayer(*player);
         mvprintw(2, 1, "[f:%lf]", factor);
-        refresh();
+        refresh(); //refresh screen
         
+        //++ start verifications ++
+        if(chunk_offset%GAME_chunksize==0) genChunk(chunk);   
+        //++ verificacion que perdio
+        //player.x+1<world.nCols siempreeee
+        if(player->invulerable==-1)//si es vulnerable verifica
+            for(int m=0; m<player->y_border && player->y-m<world.nRens; m++)
+                if(world.ptr[player->y-m][player->x+player->x_border]=='=' || world.ptr[player->y-m][player->x+player->x_border]=='*'){
+                    if(--player->lifes == 0){
+                        mvprintw(10, 1, ":PERDIO");
+                        return; //se acaba el juego
+                    }
+                    else{
+                        player->invulerable=chunk_offset; //el momento en que empezo a ser invulnerable
+                        factor*=1.15; //alenta el juego
+                        break;
+                    }
+                }  
+            
+        //++ new tick ++
+        factor=1/(log10(floor(chunk_offset/GAME_chunksize)+10));
         sleep_ms((int)floor(GAME_mstick*factor));
+        
+        //++ preparing new frame
         shiftColsMatrix(world, -1); //move world left 1
         //copy new column to world
         chunk_col=chunk_offset%GAME_chunksize;
@@ -158,10 +169,6 @@ void StartGame(Matrix world, Matrix chunk, struct Player player){
             world.ptr[m][world.nCols-1]=chunk.ptr[m][chunk_col];
         chunk_offset++;
     }
-    
-    mvprintw(4, 1, ":GAME OVER\nPresiona enter para salir");
-    refresh();
-    getchar();
 }
 
 void initGame(){
@@ -185,11 +192,16 @@ void initGame(){
         .y=WIN_height-2,
         .x_border=1,
         .y_border=3,
-        .jumpx=0
+        .jumpx=0,
+        .lifes=2,
+        .invulerable=-1,
     };
     
     sleep_ms(100);
-    StartGame(world, chunk, player);
+    StartGame(world, chunk, &player);
+    mvprintw(4, 1, ":GAME OVER\nPresiona enter para salir");
+    refresh();
+    getchar();
     
     endwin();
     //printf("GAME ENDED");

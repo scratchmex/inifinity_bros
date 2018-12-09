@@ -9,3 +9,4 @@ extern const int OBS_lengthvar=2;
 extern const int OBS_heightspace=6;
 
 extern const int PLAYER_jumpheight=10;
+extern const int PLAYER_invulnerableticks=100;

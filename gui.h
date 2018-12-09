@@ -59,13 +59,17 @@ int Menu(){
 
 void pauseMenu(WINDOW* win){
     nodelay(win, FALSE);
-    mvprintw(5, 1, "Presiona \'s\' para continuar o \'e\' para salir.");
+    mvprintw(5, 1, "Presiona \'s\' para continuar, \'m\' para el menu o \'e\' para salir.");
     
     char c=getch();
-    if(c=='s') return;
-    if(c=='e'){
-        endwin();
-        printf("Bye bye\n");
-        exit(0);
-    } 
+    switch(c) {
+        case 's':
+            return;
+        case 'e':
+            endwin();
+            printf("Bye bye\n");
+            exit(0);
+        case 'm':
+            Menu();
+    }
 }
