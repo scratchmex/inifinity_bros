@@ -47,7 +47,8 @@ void sleep_ms(int milliseconds){ // cross-platform sleep function
 
 //++++++ GAME ++++++
 void printPlayer(struct Player player){
-    mvprintw(player.y, player.x, "%%");
+    for(int i=0; i<player.y_border; i++)
+        mvprintw(player.y-i, player.x, "%%");
 }
 
 int canDrop(Matrix world, struct Player *player){
@@ -56,6 +57,7 @@ int canDrop(Matrix world, struct Player *player){
         mvprintw(player->y+1, player->x+n, "@");
         if(world.ptr[player->y+1][player->x+n]!='+') return 0;
     }
+    if(player->y+2>=world.nRens) return 0;
     return 1;
 }
 
@@ -63,7 +65,7 @@ int canJump(Matrix world, struct Player *player){
     if(player->y-1>=world.nRens || player->y-1<0) return 0;
     for(int n=0; n<player->x_border && n<world.nCols; n++){
         mvprintw(player->y-1, player->x+n, "@");
-        if(world.ptr[player->y-1][player->x+n]!='+') return 0;
+        if(world.ptr[player->y-player->y_border][player->x+n]!='+') return 0;
     }
     return 1;
 }
@@ -80,6 +82,7 @@ int movePlayer(WINDOW *win, struct Player *player, Matrix world){
             mvprintw(4, 1, ":UP");
             break;
         case 's':
+            mvprintw(4, 1, ":PAUSA");  
             pauseMenu(win);
             break;
         default:
@@ -91,14 +94,18 @@ int movePlayer(WINDOW *win, struct Player *player, Matrix world){
         int jumpy=jumpPoly(player->jumpx);
         player->jumpx++;
         mvprintw(6, 1, ":BRINCANDO");
-        if(jumpy==0) //si ya acabo de brincar reinicializa
+        if(jumpy==0 || !canJump(world, player)) //si ya acabo de brincar reinicializa
             player->jumpx=0;
-        else if(jumpy>0 && canJump(world, player)){
+        else if(jumpy>0){
             mvprintw(7, 1, ":SUBIENDOO");    
             player->y-=jumpy; //subiendo
         }
+        else if(jumpy<0 && canDrop(world, player)){
+            mvprintw(7, 1, ":BAJANDOO");    
+            player->y-=jumpy; //bajando
+        }
     }
-    else if(canDrop(world, player) && player->y+2!=world.nRens){
+    else if(canDrop(world, player)){
         mvprintw(7, 1, ":CAYENDOO");
         player->y++; 
     }
@@ -108,7 +115,7 @@ int movePlayer(WINDOW *win, struct Player *player, Matrix world){
     //verificacion que perdio
     //player.x+1<world.nCols siempreeee
     for(int m=0; m<player->y_border && player->y-m<world.nRens; m++)
-        if(world.ptr[player->y-m][player->x+1]=='='){
+        if(world.ptr[player->y-m][player->x+player->x_border]=='='){
             break_here();
             return 1;
         }
@@ -131,7 +138,7 @@ void StartGame(Matrix world, Matrix chunk, struct Player player){
         box(stdscr, '|', '-'); //print borders
         //move player
         if(movePlayer(stdscr, &player, world)){
-            mvprintw(10, 1, "[PERDIO]");
+            mvprintw(10, 1, ":PERDIO");
             printPlayer(player); //perdio si return 1
             break;
         } 
@@ -152,7 +159,7 @@ void StartGame(Matrix world, Matrix chunk, struct Player player){
         chunk_offset++;
     }
     
-    mvprintw(5, 1, ":GAME OVER\nPresiona enter para salir");
+    mvprintw(4, 1, ":GAME OVER\nPresiona enter para salir");
     refresh();
     getchar();
 }
@@ -177,19 +184,15 @@ void initGame(){
         .x=(int)floor(WIN_width/2),
         .y=WIN_height-2,
         .x_border=1,
-        .y_border=1,
+        .y_border=3,
         .jumpx=0
     };
     
-    sleep_ms(1000);
-    if(Menu()==1) StartGame(world, chunk, player);
-    else{
-        endwin();
-        printf("SOMETHING HAPPENED IN MENU\n");
-    }
+    sleep_ms(100);
+    StartGame(world, chunk, player);
     
     endwin();
-    printf("GAME ENDED");
+    //printf("GAME ENDED");
     freeMatrix(world);
     freeMatrix(chunk);
 }
@@ -201,7 +204,10 @@ int main(){
     curs_set(FALSE); // Don't display a cursor
     //raw(); // Interpret raw text input
     
-    initGame();
+    Menu();
+    while(1) {
+        initGame();
+    }
 
     getchar();
     endwin();

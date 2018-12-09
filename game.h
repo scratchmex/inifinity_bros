@@ -9,8 +9,9 @@ struct Player{
 };
 
 int jumpPoly(int x){
-    int x0=20, xm=6;
-    if(x>=x0/2) return 0;
+    int x0=30, xm=6;
+    if(x>=x0) return 0;
+    else if(x>=x0/2) return -1;
     return 1;
     double fx=-x*(x-x0)*(4*xm/pow(xm,2));
     mvprintw(10, 1, "jmply=%lf", fx);
