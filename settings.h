@@ -1,5 +1,5 @@
 extern const int GAME_chunksize=20;
-extern const int GAME_mstick=50;
+extern const int GAME_mstick=40;
 
 extern const int WIN_width=180;
 extern const int WIN_height=50;

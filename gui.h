@@ -33,7 +33,7 @@ void wprintMatrixRange(WINDOW* win, Matrix mat, int y0, int x0){
 }
 
 int Menu(){
-    char ch;
+    char c;
     clear();
     //mas funcionalidad, seleccion con colores
     
@@ -49,8 +49,11 @@ int Menu(){
     printw("Presiona <espacio> para iniciar el juego");
     refresh();
     while(1){
-        ch = getch(); //wait
-        switch(ch){
+        nodelay(stdscr, FALSE);
+        char c=getch();
+        nodelay(stdscr, TRUE);
+        
+        switch(c){
             case ' ':
                 return 1;
         }
@@ -58,10 +61,10 @@ int Menu(){
 }
 
 void pauseMenu(WINDOW* win){
-    nodelay(win, FALSE);
     mvprintw(5, 1, "Presiona \'s\' para continuar, \'m\' para el menu o \'e\' para salir.");
-    
+    nodelay(win, FALSE);
     char c=getch();
+    nodelay(win, TRUE);
     switch(c) {
         case 's':
             return;
