@@ -1,4 +1,9 @@
 #include <math.h>
+#include <stdlib.h>
+
+int randRange(int a, int b){
+    return a+rand()%(b-a);
+}
 
 struct Player{
     int x;
@@ -26,7 +31,7 @@ void genChunk(Matrix chunk){
     //fresh chunk
     initMatrix(chunk, '+');
     //generate
-    int height=WIN_height-((rand()%((int)floor(WIN_height/2)-OBS_heightspace))+OBS_heightspace);
+    int height=randRange((int)floor(WIN_height/2), WIN_height);
     int length=OBS_maxlength-(rand()%OBS_lengthvar); //largo del obstaculo
     for(int x=0; x<length && x<chunk.nCols; x++)
         chunk.ptr[height][x]='=';
@@ -68,12 +73,11 @@ int playerColision(Matrix world, struct Player *player){
 void movePlayer(WINDOW *win, struct Player *player, Matrix world){
     nodelay(win, TRUE);
     char c = getch();
-    //nodelay(win, FALSE);
+    //nodelay(win, TRUE);
     
     switch(c) {
         case ' ':
             if(player->jumpx==0) player->jumpx=1;
-            //player->jumpx++;
             mvprintw(4, 1, ":UP");
             break;
         case 's':
@@ -89,7 +93,7 @@ void movePlayer(WINDOW *win, struct Player *player, Matrix world){
         int jumpy=jumpPoly(player->jumpx);
         player->jumpx++;
         mvprintw(6, 1, ":BRINCANDO");
-        if(jumpy==-2 || !canJump(world, player)) //si ya acabo de brincar reinicializa
+        if(jumpy==-2 || !canJump(world, player)) //si ya acabo de brincar o no puede reinicializa
             player->jumpx=0;
         else if(jumpy>0){
             mvprintw(7, 1, ":SUBIENDOO");    

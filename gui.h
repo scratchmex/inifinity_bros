@@ -4,19 +4,6 @@
 #include <time.h>
 #include <string.h>
 
-void sleep_ms(int milliseconds){ // cross-platform sleep function
-    #if defined(_WIN32) || defined(WIN32)
-        Sleep(milliseconds);
-    #elif _POSIX_C_SOURCE >= 199309L
-        struct timespec ts;
-        ts.tv_sec = milliseconds / 1000;
-        ts.tv_nsec = (milliseconds % 1000) * 1000000;
-        nanosleep(&ts, NULL);
-    #else
-        usleep(milliseconds * 1000);
-    #endif
-}
-
 //++ GUI functions
 void resizeWindow(int width, int height){
     #ifdef OS_Windows
@@ -150,7 +137,7 @@ int Menu(){
         
         //Ver tecla
         //nodelay(stdscr, FALSE);
-        sleep_ms(100);
+        napms(100);
         c=getch();
         // nodelay(stdscr, TRUE);
         
@@ -174,7 +161,7 @@ int Menu(){
                 break;
             case 'e':
                 endwin();
-                printf("Bye bye\n");
+                printf("\nBye bye\n");
                 exit(0);
         }
     }
@@ -197,7 +184,7 @@ void pauseMenu(WINDOW* win){
             return;
         case 'e':
             endwin();
-            printf("Bye bye\n");
+            printf("\nBye bye\n");
             exit(0);
         case 'm':
             Menu();

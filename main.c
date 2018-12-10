@@ -1,13 +1,5 @@
 #define MATTYPE char
 
-#ifdef __unix__
-#define OS_Unix
-
-#elif defined(_WIN32) || defined(WIN32)
-#define OS_Windows
-#include <windows.h>
-#endif
-
 #include "settings.h"
 #include "matrixlib.h"
 #include "gui.h"
@@ -48,8 +40,6 @@ void playGame(Matrix world, Matrix chunk, struct Player *player){
         }
         else //si no es invulnerable imprimelo
             printPlayer(*player);
-        //refresh screen
-        refresh();
         
         //++ start verifications ++
         //chunk ver
@@ -69,8 +59,12 @@ void playGame(Matrix world, Matrix chunk, struct Player *player){
         }
         //mueve al jugador para el siguiente tick
         movePlayer(stdscr, player, world);
+        //refresh screen
+        refresh();
+        //elimina caracteres que esten en la cola de getch para evitar input lag
+        while(getch() != ERR) {}
         //espera al siguiente tick
-        sleep_ms((int)floor(GAME_mstick*factor));
+        napms(GAME_mstick*factor);
         
         //++ new tick ++ (calcula el siguiente tick del juego)
         //calcula el nuevo factor de velocidad
@@ -106,23 +100,24 @@ void initGame(){
         .x_border=1,
         .y_border=3,
         .jumpx=0,
-        .lifes=2,
+        .lifes=3,
         .invulerable=-1,
     };
     
-    sleep_ms(100);
+    napms(100);
     playGame(world, chunk, &player);
     mvprintw(4, 1, ":GAME OVER\tPresiona <enter> para reiniciar");
     refresh();
     getchar();
     
+    //Game ended
     endwin();
-    //printf("GAME ENDED");
     freeMatrix(world);
     freeMatrix(chunk);
 }
 
 int main(){
+    srand(time(0)); //rand seed
     resizeWindow(WIN_height, WIN_width);
     printf("Hecho por Ivan Gonzalez [NUA: 424667] como proyecto final para Elementos de la Computacion\n\nPresiona cualquier tecla para continuar con el juego...");
     getchar();
