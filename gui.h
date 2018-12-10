@@ -2,6 +2,7 @@
 #include <ncurses.h> //terminal manipulation lib
 #include <math.h>
 #include <time.h>
+#include <string.h>
 
 void sleep_ms(int milliseconds){ // cross-platform sleep function
     #if defined(_WIN32) || defined(WIN32)
@@ -44,12 +45,33 @@ void wprintMatrixRange(WINDOW* win, Matrix mat, int y0, int x0){
     if(mat.nCols!=x || mat.nRens!=y) printf("CUIDADO CON TUS DIMENSIONES DE LA MATRIZ -- NO REDIMENSIONES LA VENTANA\n");
     for(int m=0; m<mat.nRens && m<=y0; m++) for(int n=0; n<mat.nCols && n<=x0; n++){
         if(mat.ptr[m][n]=='+') continue; //si es el char especial saltalo
-        mvprintw(m, n, "%c", mat.ptr[m][n]);
+        mvwprintw(win, m, n, "%c", mat.ptr[m][n]);
     }
 }
 
 void intructionsMenu(){
-    
+    clear();
+    box(stdscr, '.', '.'); //print borders
+    char instrucciones[][255]={
+        "Para regresar al menu principal presiona cualquier tecla",
+        "",
+        "Instrucciones:",
+        "El juego consiste en evitar chocar con las plataformas y evitar los obstaculos \'*\'",
+        "El estatus del juego se encuentra en la parte superior izquierda, ahi hay datos como:",
+        "\t-el puntaje", 
+        "\t-el factor de velocidad f[]",
+        "\t-las coordenadas del jugador yx[]",
+        "\t-si esta brincando j[]",
+        "\t-las vidas l[]", 
+        "\t-si es invulnerable i[]",
+        "Ademas aparecen algunos datos despues de \':\' en la misma ubicacion",
+        "Para pausar el juego presiona \'p\' en el juego y para salir presiona \'e\' en el menu o en el menu de pausa"
+    };
+    for(int i=0; i<sizeof(instrucciones)/sizeof(instrucciones[0]); i++)
+        mvprintw(i+1, 1, "%s", instrucciones[i]);
+    refresh();
+    getchar();
+    clear();
 }
 
 int Menu(){
@@ -94,13 +116,12 @@ int Menu(){
     panels[2]=newwin(instrucciones.nRens, instrucciones.nCols, height, (int)floor(WIN_width-instrucciones.nCols)/2);
     height+=instrucciones.nRens+space;
     
-    //++ Imprimir el menu
+    int selection=1, tick=0;
     box(stdscr, '+', '+'); //print borders
     refresh();
     
-    int selection=1, tick=0;
-    
     while(1){
+        //++ Imprimir el menu
         //++ Colorear texto y ver <enter>
         //titulo
         wattron(panels[0], COLOR_PAIR(tick+1));
@@ -146,6 +167,8 @@ int Menu(){
                         return 1;
                     case 2://menu instrucciones
                         intructionsMenu();
+                        box(stdscr, '+', '+'); //print borders
+                        refresh();
                         break;
                 }
                 break;

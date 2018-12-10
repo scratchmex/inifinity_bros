@@ -23,7 +23,7 @@
 //++++++ GAME ++++++
 void playGame(Matrix world, Matrix chunk, struct Player *player){
     nodelay(stdscr, TRUE); //sin esperar 
-    int chunk_offset=0, chunk_col;
+    int chunk_offset=0, chunk_col, logbase=5;
     double factor=1;
     
     while(1){        
@@ -74,7 +74,7 @@ void playGame(Matrix world, Matrix chunk, struct Player *player){
         
         //++ new tick ++ (calcula el siguiente tick del juego)
         //calcula el nuevo factor de velocidad
-        factor=1/(log10(floor(chunk_offset/GAME_chunksize)+10));
+        factor=1/(log(floor(chunk_offset/GAME_chunksize)+logbase)/log(logbase));
         //preparing new frame
         shiftColsMatrix(world, -1); //move world left 1
         //copy new column to world
@@ -124,6 +124,8 @@ void initGame(){
 
 int main(){
     resizeWindow(WIN_height, WIN_width);
+    printf("Hecho por Ivan Gonzalez [NUA: 424667] como proyecto final para Elementos de la Computacion\n\nPresiona cualquier tecla para continuar con el juego...");
+    getchar();
     initscr(); // Initialize the window
     resizeterm(WIN_height, WIN_width);
     noecho(); // Don't echo any keypresses
