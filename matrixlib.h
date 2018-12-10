@@ -109,7 +109,7 @@ Matrix fscanMatrixAdvanced(FILE* fp, char prefix[]){
     int Y=0, X=0;
     char param[50]="@";
     strcat(param, prefix);
-    strcat(param, " [%d,%d]");
+    strcat(param, "[%d,%d]");
 
     char line[256];
     for(int i=0; fgets(line, sizeof(line), fp); i++){

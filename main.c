@@ -16,33 +16,9 @@
 #include <stdio.h>
 #include <ncurses.h> //terminal manipulation lib
 #include <string.h>
-
 #include <math.h>
 #include <stdlib.h>
 #include <time.h>
-
-void break_here(){
-}
-
-void sleep_ms(int milliseconds){ // cross-platform sleep function
-    #if defined(_WIN32) || defined(WIN32)
-        Sleep(milliseconds);
-    #elif _POSIX_C_SOURCE >= 199309L
-        struct timespec ts;
-        ts.tv_sec = milliseconds / 1000;
-        ts.tv_nsec = (milliseconds % 1000) * 1000000;
-        nanosleep(&ts, NULL);
-    #else
-        usleep(milliseconds * 1000);
-    #endif
-}
-
-int playerColision(Matrix world, struct Player *player){
-    for(int m=0; m<player->y_border && player->y-m<world.nRens; m++) //verifica los bordes del personaje
-        if(world.ptr[player->y-m][player->x+player->x_border]=='=' || world.ptr[player->y-m][player->x+player->x_border]=='*')
-            return 1;
-    return 0;
-}
 
 //++++++ GAME ++++++
 void playGame(Matrix world, Matrix chunk, struct Player *player){
@@ -72,6 +48,8 @@ void playGame(Matrix world, Matrix chunk, struct Player *player){
         }
         else //si no es invulnerable imprimelo
             printPlayer(*player);
+        //refresh screen
+        refresh();
         
         //++ start verifications ++
         //chunk ver
@@ -89,11 +67,8 @@ void playGame(Matrix world, Matrix chunk, struct Player *player){
                 factor*=1.5; //alenta el juego
             }
         }
-        
         //mueve al jugador para el siguiente tick
         movePlayer(stdscr, player, world);
-        //refresh screen
-        refresh();
         //espera al siguiente tick
         sleep_ms((int)floor(GAME_mstick*factor));
         
@@ -111,7 +86,6 @@ void playGame(Matrix world, Matrix chunk, struct Player *player){
 }
 
 void initGame(){
-    resizeterm(WIN_height, WIN_width);
     clear();
     printw("Starting...");
     refresh();
@@ -151,6 +125,7 @@ void initGame(){
 int main(){
     resizeWindow(WIN_height, WIN_width);
     initscr(); // Initialize the window
+    resizeterm(WIN_height, WIN_width);
     noecho(); // Don't echo any keypresses
     curs_set(FALSE); // Don't display a cursor
     //raw(); // Interpret raw text input

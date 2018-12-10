@@ -43,7 +43,6 @@ int canDrop(Matrix world, struct Player *player){
     if(player->y+1>=world.nRens) return 0;
     for(int n=0; n<player->x_border && n<world.nCols; n++){
         // mvprintw(player->y+1, player->x+n, "@");
-        // refresh();
         if(world.ptr[player->y+1][player->x+n]!='+') return 0;
     }
     if(player->y+2>=world.nRens) return 0;
@@ -54,10 +53,16 @@ int canJump(Matrix world, struct Player *player){
     if(player->y-1>=world.nRens || player->y-1<0) return 0;
     for(int n=0; n<player->x_border && n<world.nCols; n++){
         // mvprintw(player->y-1, player->x+n, "@");
-        // refresh();
         if(world.ptr[player->y-player->y_border][player->x+n]!='+') return 0;
     }
     return 1;
+}
+
+int playerColision(Matrix world, struct Player *player){
+    for(int m=0; m<player->y_border && player->y-m<world.nRens; m++) //verifica los bordes del personaje
+        if(world.ptr[player->y-m][player->x+player->x_border]=='=' || world.ptr[player->y-m][player->x+player->x_border]=='*')
+            return 1;
+    return 0;
 }
 
 void movePlayer(WINDOW *win, struct Player *player, Matrix world){
